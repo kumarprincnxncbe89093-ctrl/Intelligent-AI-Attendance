@@ -60,11 +60,14 @@ def student_screen():
 
                     student=next((s for s in all_students if s["student_id"]==student_id),None)
 
-                    if student:
-                        st.session_state.is_logged_in=True
-                        st.session_state.user.role="student"
-                        st.session_state.student_data=student
-                        st.toast(f"Welcome Back {student["name"]}")
+                    if student_screen:
+                        if "user" not in st.session_state:
+                            st.session_state.user = {"role": None}
+                        if "is_logged_in" not in st.session_state:
+                            st.session_state.is_logged_in = False
+                        if "student_data" not in st.session_state:
+                            st.session_state.student_data = None
+                        st.toast(f"Welcome Back {student['name']}")
                         time.sleep(1)
                         st.rerun()
                 
