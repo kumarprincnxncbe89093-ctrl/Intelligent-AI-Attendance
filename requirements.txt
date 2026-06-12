@@ -20,3 +20,7 @@ pillow
 
 # fronthand library
 streamlit
+
+# voice
+librosa
+resemblyzer
