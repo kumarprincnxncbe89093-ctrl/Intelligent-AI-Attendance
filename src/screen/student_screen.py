@@ -6,11 +6,155 @@ from PIL import Image
 import numpy as np
 from src.pipeline.face_pipeline import predict_attendence,get_face_embeddings,train_classifier
 from src.pipeline.voice_pipeline import get_voice_embedding
-from src.database.db import get_all_students,create_student,get_student_subjects,get_student_attendance,unenroll_student_to_subject
+from src.database.db import get_all_students,create_student,get_student_subjects,get_student_attendance,unenroll_student_to_subject,update_student_biometrics,DatabaseConnectionError
 import time
 from src.components.subject_card import subject_card
 
 from src.components.dialog_enroll import enroll_dialog
+
+def render_student_biometric_updates(student_id):
+    st.subheader("Update Profile")
+    c1,c2=st.columns(2,gap="medium")
+
+    with c1:
+        if st.button(
+            "Update Face ID",
+            type="secondary",
+            width="stretch",
+            icon=":material/face:",
+            key="open_update_face",
+        ):
+            st.session_state.show_update_face=True
+            st.session_state.show_update_voice=False
+
+    with c2:
+        if st.button(
+            "Update Voice ID",
+            type="secondary",
+            width="stretch",
+            icon=":material/mic:",
+            key="open_update_voice",
+        ):
+            st.session_state.show_update_voice=True
+            st.session_state.show_update_face=False
+
+    if st.session_state.get("show_update_face"):
+        with st.container(border=True):
+            title_col, close_col=st.columns([3,1],vertical_alignment="center")
+            with title_col:
+                st.subheader("Update Face ID")
+            with close_col:
+                if st.button(
+                    "Close",
+                    type="tertiary",
+                    width="stretch",
+                    icon=":material/close:",
+                    key="close_update_face",
+                ):
+                    st.session_state.show_update_face=False
+                    st.rerun()
+
+            photo_source=st.camera_input(
+                "Capture your new face photo",
+                width=700,
+                key="update_face_photo",
+            )
+
+            if st.button(
+                "Save Face ID",
+                type="primary",
+                width="stretch",
+                disabled=photo_source is None,
+                key="save_update_face",
+            ):
+                with st.spinner("Updating Face ID..."):
+                    img=np.array(Image.open(photo_source))
+                    encodings=get_face_embeddings(img)
+
+                    if not encodings:
+                        st.error("Could not detect a face. Please capture a clear front-facing photo.")
+                        return
+
+                    try:
+                        updated=update_student_biometrics(
+                            student_id,
+                            face_embedding=encodings[0].tolist(),
+                        )
+                    except DatabaseConnectionError as exc:
+                        st.error(str(exc))
+                        return
+
+                    if not updated:
+                        st.error("Face ID was not updated. Please try again.")
+                        return
+
+                    st.session_state.student_data.update(updated[0])
+
+                    train_classifier()
+                    st.session_state.show_update_face=False
+                    st.success("Face ID updated successfully.")
+                    time.sleep(1)
+                    st.rerun()
+
+    if st.session_state.get("show_update_voice"):
+        with st.container(border=True):
+            title_col, close_col=st.columns([3,1],vertical_alignment="center")
+            with title_col:
+                st.subheader("Update Voice ID")
+            with close_col:
+                if st.button(
+                    "Close",
+                    type="tertiary",
+                    width="stretch",
+                    icon=":material/close:",
+                    key="close_update_voice",
+                ):
+                    st.session_state.show_update_voice=False
+                    st.rerun()
+
+            try:
+                audio_data=st.audio_input(
+                    "Record a short phrase like I am present",
+                    key="update_voice_audio",
+                )
+            except Exception:
+                audio_data=None
+                st.error("Audio recorder failed to load.")
+
+            if st.button(
+                "Save Voice ID",
+                type="primary",
+                width="stretch",
+                disabled=audio_data is None,
+                key="save_update_voice",
+            ):
+                with st.spinner("Updating Voice ID..."):
+                    voice_embedding=get_voice_embedding(audio_data.read())
+
+                    if not voice_embedding:
+                        st.error("Could not create a voice profile. Please record again.")
+                        return
+
+                    try:
+                        updated=update_student_biometrics(
+                            student_id,
+                            voice_embedding=voice_embedding,
+                        )
+                    except DatabaseConnectionError as exc:
+                        st.error(str(exc))
+                        return
+
+                    if not updated:
+                        st.error("Voice ID was not updated. Please try again.")
+                        return
+
+                    st.session_state.student_data.update(updated[0])
+
+                    st.session_state.show_update_voice=False
+                    st.success("Voice ID updated successfully.")
+                    time.sleep(1)
+                    st.rerun()
+
 def student_dashboard():
     student_data=st.session_state.student_data
     student_id=student_data['student_id']
@@ -27,6 +171,8 @@ def student_dashboard():
             st.rerun()
 
     st.space()
+    render_student_biometric_updates(student_id)
+    st.divider()
 
     c1,c2=st.columns(2)
     with c1:
@@ -38,8 +184,13 @@ def student_dashboard():
     st.divider()
 
     with st.spinner('Loading your enrolled subjects..'):
-        subjects=get_student_subjects(student_id)
-        logs=get_student_attendance(student_id)
+        try:
+            subjects=get_student_subjects(student_id)
+            logs=get_student_attendance(student_id)
+        except DatabaseConnectionError as exc:
+            st.error(str(exc))
+            footer_dashboard()
+            return
 
     stats_map={}
 
@@ -73,7 +224,11 @@ def student_dashboard():
                 width='stretch',
                 key=f"unenroll_{subject_id}",
             ):
-                unenroll_student_to_subject(student_id,subject_id)
+                try:
+                    unenroll_student_to_subject(student_id,subject_id)
+                except DatabaseConnectionError as exc:
+                    st.error(str(exc))
+                    return
                 st.toast(f"Unenrolled from {subject_name}")
                 time.sleep(1)
                 st.rerun()
@@ -138,9 +293,13 @@ def student_screen():
             else:
                 if detected:
                     student_id=list(detected.keys())[0]
-                    all_students=get_all_students()
+                    try:
+                        all_students=get_all_students()
+                    except DatabaseConnectionError as exc:
+                        st.error(str(exc))
+                        return
 
-                    student=next((s for s in all_students if s["student_id"]==student_id),None)
+                    student=next((s for s in all_students if str(s["student_id"])==str(student_id)),None)
 
                     if student:
                         if "user" not in st.session_state:
@@ -186,7 +345,11 @@ def student_screen():
                             if audio_data:
                                 voice_emb=get_voice_embedding(audio_data.read())
 
-                            response_data=create_student(new_name,face_embedding=face_emb,voice_embedding=voice_emb)
+                            try:
+                                response_data=create_student(new_name,face_embedding=face_emb,voice_embedding=voice_emb)
+                            except DatabaseConnectionError as exc:
+                                st.error(str(exc))
+                                return
 
                             if response_data:
                                 train_classifier()

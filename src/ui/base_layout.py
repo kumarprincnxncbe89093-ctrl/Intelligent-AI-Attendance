@@ -5,7 +5,8 @@ def style_background_home():
     st.markdown("""
         <style>
                 .stApp {
-                    background:#5865f2 !important;
+                    background: #5865F2 !important;
+                    color: #1e293b !important;
                 }
 
                 .block-container {
@@ -52,6 +53,10 @@ def style_background_home():
                 }
 
                 @media (max-width: 760px) {
+                    .stApp {
+                        background: #5865F2 !important;
+                    }
+
                     .block-container {
                         padding-left: 1rem !important;
                         padding-right: 1rem !important;
@@ -62,9 +67,16 @@ def style_background_home():
                     }
 
                     .stApp div[data-testid="stColumn"] {
+                        background-color: #ffffff !important;
                         padding: 1.4rem 1.5rem !important;
                         min-height: 215px;
                         border-radius: 1.7rem !important;
+                    }
+
+                    .stApp div[data-testid="stColumn"] h2,
+                    .stApp div[data-testid="stColumn"] p,
+                    .stApp div[data-testid="stColumn"] span {
+                        color: #2d3040 !important;
                     }
                 }
 
@@ -77,6 +89,14 @@ def style_background_dashboard():
         <style>
                 .stApp {
                     background: #E0E3FF !important;
+                    color: #1e293b !important;
+                }
+
+                @media (max-width: 760px) {
+                    .stApp {
+                        background: #E0E3FF !important;
+                        color: #1e293b !important;
+                    }
                 }
 
         </style>
@@ -104,6 +124,7 @@ def style_base_layout():
                     font-size: 2.4rem !important;
                     line-height: 1.1 !important;
                     margin-bottom: 0 !important;
+                    color: #1e293b;
                     
                 }
                 h2 {
@@ -111,10 +132,12 @@ def style_base_layout():
                     font-size: 2rem !important;
                     line-height: 1.1 !important;
                     margin-bottom: 0 !important;
+                    color: #1e293b;
                 }
 
-                h3,h4,p{
+                h3,h4,p,label,span{
                     font-family: 'Outfit', sans-serif ;
+                    color: #1e293b;
 
                 }
                 button,
@@ -178,11 +201,89 @@ def style_base_layout():
                         padding-right: 1rem !important;
                     }
 
+                    .stApp,
+                    .stApp p,
+                    .stApp label,
+                    .stApp span,
+                    .stApp div {
+                        color: #1e293b;
+                    }
+
+                    h1, h2, h3, h4 {
+                        font-family: 'Outfit', sans-serif !important;
+                        color: #1e293b !important;
+                        letter-spacing: 0 !important;
+                        overflow-wrap: anywhere;
+                    }
+
+                    h1 {
+                        font-size: 2rem !important;
+                        line-height: 1.08 !important;
+                    }
+
+                    .home-hero h1 {
+                        color: #ffffff !important;
+                        font-family: 'Outfit', sans-serif !important;
+                        font-weight: 900 !important;
+                    }
+
+                    h2 {
+                        font-size: 1.75rem !important;
+                        line-height: 1.12 !important;
+                    }
+
+                    h3 {
+                        font-size: 1.35rem !important;
+                        line-height: 1.2 !important;
+                    }
+
+                    label,
+                    p,
+                    span {
+                        font-size: 0.98rem !important;
+                        line-height: 1.35 !important;
+                    }
+
+                    div[data-testid="stCameraInput"],
+                    div[data-testid="stFileUploader"],
+                    div[data-testid="stAudioInput"] {
+                        color: #1e293b !important;
+                    }
+
+                    div[data-testid="stCameraInput"] img,
+                    div[data-testid="stCameraInput"] video {
+                        max-width: 100% !important;
+                        height: auto !important;
+                        border-radius: 0.75rem !important;
+                    }
+
                     button,
                     button[data-testid^="stBaseButton"] {
-                        min-height: 2.75rem !important;
-                        padding: 9px 14px !important;
-                        font-size: 0.95rem !important;
+                        background-color: #5865F2 !important;
+                        color: #ffffff !important;
+                        min-height: 2.8rem !important;
+                        padding: 9px 12px !important;
+                        font-size: 0.9rem !important;
+                        white-space: normal !important;
+                        overflow-wrap: anywhere !important;
+                        text-align: center !important;
+                    }
+
+                    button *,
+                    button[data-testid^="stBaseButton"] * {
+                        color: #ffffff !important;
+                        white-space: normal !important;
+                        overflow-wrap: anywhere !important;
+                    }
+
+                    button[kind="secondary"],
+                    button[data-testid="stBaseButton-secondary"] {
+                        background-color: #EB458E !important;
+                    }
+
+                    button[kind="tertiary"],
+                    button[data-testid="stBaseButton-tertiary"] {
+                        background-color: #000000 !important;
                     }
                 }
         </style>

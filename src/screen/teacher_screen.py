@@ -6,7 +6,7 @@ from src.components.footer import footer_dashboard
 from src.components.header import header_dashboard
 from src.components.subject_card import subject_card
 from src.database.config import supabase
-from src.database.db import check_teacher_exist,create_teacher,teacher_login,get_teacher_subjects, get_attendance_for_teacher
+from src.database.db import check_teacher_exist,create_teacher,teacher_login,get_teacher_subjects, get_attendance_for_teacher, DatabaseConnectionError, execute_query
 from src.pipeline.face_pipeline import predict_attendance
 from src.ui.base_layout import style_background_dashboard, style_base_layout
 from src.components.dialog_voice_attendance import voice_attendance_dialog
@@ -102,7 +102,11 @@ def teacher_tab_take_attendance():
     if 'processed_attendance_uploads' not in st.session_state:
         st.session_state.processed_attendance_uploads=set()
 
-    subjects=get_teacher_subjects(teacher_id)
+    try:
+        subjects=get_teacher_subjects(teacher_id)
+    except DatabaseConnectionError as exc:
+        st.error(str(exc))
+        return
 
     if not subjects:
         st.warning('You haven,t created any subject yet!! Please create one to begin!')
@@ -207,12 +211,15 @@ def render_attendance_photos(selected_subject_id):
                                 student_id, []
                             ).append(f"Photo {idx + 1}")
 
-                enrolled_res = (
-                    supabase.table("subject_students")
-                    .select("*,students(*)")
-                    .eq("subject_id", selected_subject_id)
-                    .execute()
-                )
+                try:
+                    enrolled_res = execute_query(
+                        supabase.table("subject_students")
+                        .select("*,students(*)")
+                        .eq("subject_id", selected_subject_id)
+                    )
+                except DatabaseConnectionError as exc:
+                    st.error(str(exc))
+                    return
 
                 enrolled_students = enrolled_res.data
 
@@ -300,7 +307,11 @@ def teacher_tab_manage_subjects():
             create_subject_dialog(teacher_id)
 
     # List of all subjects
-    subjects=get_teacher_subjects(teacher_id)
+    try:
+        subjects=get_teacher_subjects(teacher_id)
+    except DatabaseConnectionError as exc:
+        st.error(str(exc))
+        return
     if subjects:
         for sub in subjects:
             stats=[
@@ -331,9 +342,36 @@ def teacher_tab_attendance_records():
 
     teacher_id=st.session_state.teacher_data["teacher_id"]
 
-    records=get_attendance_for_teacher(teacher_id)
+    try:
+        subjects=get_teacher_subjects(teacher_id)
+    except DatabaseConnectionError as exc:
+        st.error(str(exc))
+        return
+
+    if not subjects:
+        st.info("Create a subject first to view attendance records.")
+        return
+
+    subject_options={f"{s['name']} - {s['subject_code']}":s['subject_id'] for s in subjects}
+    selected_subject_label=st.selectbox(
+        "Select Subject",
+        options=list(subject_options.keys()),
+        key="attendance_records_subject",
+    )
+    selected_subject_id=subject_options[selected_subject_label]
+
+    try:
+        records=get_attendance_for_teacher(teacher_id)
+    except DatabaseConnectionError as exc:
+        st.error(str(exc))
+        return
+    records=[
+        record for record in records
+        if str(record.get("subject_id"))==str(selected_subject_id)
+    ]
 
     if not records:
+        st.info("No attendance records found for the selected subject.")
         return
     
     data=[]
@@ -378,7 +416,11 @@ def login_teacher(username,password):
     if not username or not password:
         return False
 
-    teacher=teacher_login(username,password)
+    try:
+        teacher=teacher_login(username,password)
+    except DatabaseConnectionError as exc:
+        st.error(str(exc))
+        return None
 
     if teacher:
         st.session_state.user_role="teacher"
@@ -430,12 +472,13 @@ def teacher_screen_login():
             shortcut="command+enter",
             width="stretch",
         ):
-            if login_teacher(teacher_username,teacher_pass):
+            login_result=login_teacher(teacher_username,teacher_pass)
+            if login_result is True:
                 st.toast("Welcome back!",icon="👋")
                 import time
                 time.sleep(1)
                 st.rerun()
-            else:
+            elif login_result is False:
                 st.error("Invalid username and password combo")
 
     with btnc2:
@@ -455,14 +498,16 @@ def register_teacher(teacher_username,teacher_name,teacher_pass,teacher_pass_con
     if not teacher_username or not teacher_name or not teacher_pass :
         return False, "All Fields are required!!"
 
-    if check_teacher_exist(teacher_username):
-        return False, "Username already taken"
-    if teacher_pass != teacher_pass_confirm:
-        return False, "Password doesn't match"
-    
     try:
+        if check_teacher_exist(teacher_username):
+            return False, "Username already taken"
+        if teacher_pass != teacher_pass_confirm:
+            return False, "Password doesn't match"
+
         create_teacher(teacher_username,teacher_pass,teacher_name)
         return True,"Sucessfully Created! Login Now"
+    except DatabaseConnectionError as e:
+        return False, str(e)
     except Exception as e:
         return False, "Unexpected Error!!"
 
