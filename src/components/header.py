@@ -58,7 +58,7 @@ def header_dashboard():
     st.markdown(
         f"""
         <div style="display:flex; align-items:center; justify-content:center;gap:10px;">
-            <img src="data:image/png;base64,{encoded}" width="100",height="100" style="margin-bottom: 20px;"/>
+            <img src="data:image/png;base64,{encoded}" width="100" height="100" style="margin-bottom: 20px;"/>
             <h2 style="text-align: left; color: #5865F2;"> AI Att. <br>System</h2>
         </div>
         """,

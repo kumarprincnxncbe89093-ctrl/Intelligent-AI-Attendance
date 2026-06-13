@@ -105,7 +105,3 @@ def predict_attendance(class_image_np):
 
 
     return detected_student,all_students,len(encodings)
-
-
-# Backward-compatible alias for the existing student login import.
-predict_attendence = predict_attendance

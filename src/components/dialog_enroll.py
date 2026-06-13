@@ -1,5 +1,5 @@
 import streamlit as st
-from src.database.db import create_subject,enroll_student_to_subject
+from src.database.db import enroll_student_to_subject
 from src.database.config import supabase
 import time
 
@@ -23,7 +23,7 @@ def enroll_dialog():
                     st.warning("You are already enrolled in this program")
                 else:
                     enroll_student_to_subject(student_id,subject['subject_id'])
-                    st.success("Succesfully enrolled!!")
+                    st.success("Successfully enrolled!")
                     time.sleep(1)
                     st.rerun()
             else:

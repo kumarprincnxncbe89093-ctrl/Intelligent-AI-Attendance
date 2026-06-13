@@ -4,7 +4,7 @@ from src.components.header import header_dashboard
 from src.components.footer import footer_dashboard
 from PIL import Image
 import numpy as np
-from src.pipeline.face_pipeline import predict_attendence,get_face_embeddings,train_classifier
+from src.pipeline.face_pipeline import predict_attendance,get_face_embeddings,train_classifier
 from src.pipeline.voice_pipeline import get_voice_embedding
 from src.database.db import get_all_students,create_student,get_student_subjects,get_student_attendance,unenroll_student_to_subject
 import time
@@ -55,8 +55,12 @@ def student_dashboard():
             stats_map[sid]['attended']+=1
     
     cols=st.columns(2)
-    for i,sub_node in enumerate(subjects):
-        sub=sub_node['subjects']
+    visible_subjects = [node["subjects"] for node in subjects if node.get("subjects")]
+
+    if not visible_subjects:
+        st.info("You are not enrolled in any subjects yet.")
+
+    for i,sub in enumerate(visible_subjects):
         sid=sub['subject_id']
 
 
@@ -119,12 +123,54 @@ def student_screen():
     
     show_registration=False
 
+    st.markdown(
+        """
+        <style>
+            div[data-testid="stCameraInput"] {
+                max-width: 700px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            div[data-testid="stCameraInput"] label {
+                width: 100%;
+            }
+
+            div[data-testid="stCameraInput"] video,
+            div[data-testid="stCameraInput"] img {
+                display: block;
+                width: 100% !important;
+                height: min(62vh, 560px) !important;
+                object-fit: cover !important;
+                object-position: center center !important;
+                background: #f8fafc;
+            }
+
+            div[data-testid="stCameraInput"] button {
+                width: 100% !important;
+            }
+
+            @media (max-width: 760px) {
+                div[data-testid="stCameraInput"] {
+                    max-width: 100%;
+                }
+
+                div[data-testid="stCameraInput"] video,
+                div[data-testid="stCameraInput"] img {
+                    height: min(58vh, 460px) !important;
+                }
+            }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    
     photo_source=st.camera_input("Position your face in the center",width=700)
 
     if photo_source:
         img= np.array(Image.open(photo_source))
         with st.spinner("AI is scanning..."):
-            detected,all_ids,num_faces=predict_attendence(img)
+            detected,all_ids,num_faces=predict_attendance(img)
 
             if num_faces==0:
                 st.warning("Face not found!")
@@ -151,7 +197,7 @@ def student_screen():
                         st.rerun()
                 
                 else:
-                    st.info("Face not recognized! You might be a new student!")
+                    st.info("Face not recognized. You might be a new student.")
                     show_registration=True
 
     if show_registration:
@@ -160,7 +206,7 @@ def student_screen():
             new_name=st.text_input("Enter your name",placeholder="E.g. prince kumar")
 
             st.subheader("Optional : Voice Enrollment")
-            st.info("Enroll your for voice only attendence")
+            st.info("Enroll your voice for voice-only attendance")
 
             audio_data=None
 
@@ -196,7 +242,7 @@ def student_screen():
                                 time.sleep(1)
                                 st.rerun()
                         else:
-                            st.error("Couldnt capture your facial feature for registrations")
+                            st.error("Could not capture your facial features for registration")
 
                 else:
                     st.warning("Please enter your name!!")

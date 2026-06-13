@@ -25,7 +25,15 @@ def auto_enroll_dialog(subject_code):
         return
     subject=res.data[0]
 
-    check=supabase.table('subject_students').select('*').eq('subject_id',subject['subject_id']).eq('student_id',student_id).execute()
+    try:
+        check=supabase.table('subject_students').select('*').eq('subject_id',subject['subject_id']).eq('student_id',student_id).execute()
+    except Exception as e:
+        st.error(f"Could not check enrollment: {str(e)}")
+        if st.button('Close'):
+            st.query_params.clear()
+            st.rerun()
+        return
+
     if check.data:
         st.info('You are already enrolled!!!')
         if st.button('Got it!!'):
@@ -43,8 +51,11 @@ def auto_enroll_dialog(subject_code):
     
     with col2:
         if st.button('Yes enroll now!',type='primary',width='stretch'):
-            enroll_student_to_subject(student_id,subject['subject_id'])
-            st.success('Joined succesfully!!')
-            st.query_params.clear()
-            time.sleep(2)
-            st.rerun()
+            try:
+                enroll_student_to_subject(student_id,subject['subject_id'])
+                st.success('Joined successfully!')
+                st.query_params.clear()
+                time.sleep(2)
+                st.rerun()
+            except Exception as e:
+                st.error(f"Could not enroll: {str(e)}")
