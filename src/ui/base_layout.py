@@ -124,7 +124,17 @@ def style_base_layout():
                     color: white !important;
                     padding: 10px 20px !important;
                     border: none !important;
-                    transition: transform 0.25s ease-in-out !important;
+                    min-height: 2.9rem !important;
+                    display: inline-flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    gap: 0.45rem !important;
+                    font-family: 'Outfit', sans-serif !important;
+                    font-size: 1rem !important;
+                    font-weight: 700 !important;
+                    line-height: 1.1 !important;
+                    box-shadow: 0 10px 22px rgba(88, 101, 242, 0.18) !important;
+                    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease !important;
                     }
                 button *,
                 button[data-testid="stBaseButton-primary"] * {
@@ -137,23 +147,43 @@ def style_base_layout():
                     color: white !important;
                     padding: 10px 20px !important;
                     border: none !important;
-                    transition: transform 0.25s ease-in-out !important;
+                    box-shadow: 0 10px 22px rgba(235, 69, 142, 0.18) !important;
                     }
                 button[kind="tertiary"],
                 button[data-testid="stBaseButton-tertiary"] {
                     border-radius: 1.5rem !important;
-                    background-color: black !important;
+                    background-color: #000000 !important;
                     color: white !important;
                     padding: 10px 20px !important;
                     border: none !important;
-                    transition: transform 0.25s ease-in-out !important;
+                    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.14) !important;
                     }
                 button[kind="tertiary"] *,
                 button[data-testid="stBaseButton-tertiary"] * {
                     color: white !important;
                     }
                 button:hover {
-                    transform: scale(1.05) !important;
+                    transform: translateY(-1px) !important;
+                    box-shadow: 0 12px 26px rgba(88, 101, 242, 0.22) !important;
                     }
+                button[kind="tertiary"]:hover,
+                button[data-testid="stBaseButton-tertiary"]:hover {
+                    background-color: #111111 !important;
+                    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.18) !important;
+                    }
+
+                @media (max-width: 760px) {
+                    .block-container {
+                        padding-left: 1rem !important;
+                        padding-right: 1rem !important;
+                    }
+
+                    button,
+                    button[data-testid^="stBaseButton"] {
+                        min-height: 2.75rem !important;
+                        padding: 9px 14px !important;
+                        font-size: 0.95rem !important;
+                    }
+                }
         </style>
                 """,unsafe_allow_html=True)

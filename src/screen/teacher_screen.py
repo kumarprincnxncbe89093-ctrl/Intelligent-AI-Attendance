@@ -1,13 +1,21 @@
-import streamlit as st
-from src.ui.base_layout import style_background_dashboard, style_base_layout
-from src.components.header import header_dashboard
-from src.components.footer import footer_dashboard
+from datetime import datetime
 
-from src.database.db import check_teacher_exist,create_teacher,teacher_login,get_teacher_subjects
-from src.components.subject_card import subject_card
+import numpy as np
+import pandas as pd
+import streamlit as st
+
+from src.components.dialog_add_photo import add_photo_dialog
 from src.components.dialog_create_subject import create_subject_dialog
 from src.components.dialog_share_subject import share_subject_dialog
-from src.components.dialog_add_photo import add_photo_dialog
+from src.components.dilaog_attendance_results import attendance_result_dialog
+from src.components.footer import footer_dashboard
+from src.components.header import header_dashboard
+from src.components.subject_card import subject_card
+from src.database.config import supabase
+from src.database.db import check_teacher_exist,create_teacher,teacher_login,get_teacher_subjects
+from src.pipeline.face_pipeline import predict_attendance
+from src.ui.base_layout import style_background_dashboard, style_base_layout
+
 def teacher_screen():
 
     style_background_dashboard()
@@ -17,7 +25,7 @@ def teacher_screen():
     if "teacher_data" in st.session_state:
         teacher_dashboard()
     
-    elif "teacher_login_type" not in st.session_state or st.session_state. teacher_login_type=="login":
+    elif "teacher_login_type" not in st.session_state or st.session_state.teacher_login_type=="login":
         teacher_screen_login()
     elif st.session_state.teacher_login_type == "register":
         teacher_screen_register()
@@ -33,7 +41,7 @@ def teacher_dashboard():
 
     with c2:
         st.subheader(f"""Welcome, {teacher_data["name"]}""")
-        if st.button("Logout", type="secondary", key="loginbackbtn3"):
+        if st.button("Logout", type="secondary", key="loginbackbtn3", shortcut="command+backspace"):
             st.session_state["is_logged_in"] = False
             st.session_state.pop("teacher_data", None)
             st.rerun()
@@ -41,26 +49,7 @@ def teacher_dashboard():
     st.space()
     if "current_teacher_tab" not in st.session_state:
         st.session_state.current_teacher_tab="take_attendance"
-    tab1,tab2,tab3=st.columns(3)
-
-
-    with tab1:
-        type1="primary" if st.session_state.current_teacher_tab=="take_attendance" else "tertiary"
-        if st.button("Take Attendance",type=type1,width="stretch",icon=":material/ar_on_you:"):
-            st.session_state.current_teacher_tab="take_attendance"
-            st.rerun()
-
-    with tab2:
-        type2="primary" if st.session_state.current_teacher_tab=="manage_subjects" else "tertiary"
-        if st.button("Manage Subjects",type=type2,width="stretch",icon=":material/book_ribbon:"):
-            st.session_state.current_teacher_tab="manage_subjects"
-            st.rerun()
-
-    with tab3:
-        type3="primary" if st.session_state.current_teacher_tab=="attendance_records" else "tertiary"
-        if st.button("Attendance Records",type=type3,width="stretch",icon=":material/cards_stack:"):
-            st.session_state.current_teacher_tab="attendance_records"
-            st.rerun()
+    render_teacher_tabs()
 
 
     st.divider()
@@ -81,6 +70,29 @@ def teacher_dashboard():
 
 
     footer_dashboard()
+
+def render_teacher_tabs():
+    tabs=[
+        ("take_attendance","Take Attendance",":material/ar_on_you:"),
+        ("manage_subjects","Manage Subjects",":material/book_ribbon:"),
+        ("attendance_records","Attendance Records",":material/cards_stack:"),
+    ]
+
+    columns=st.columns(3, gap="medium")
+
+    for column, (tab_key, label, icon) in zip(columns, tabs):
+        with column:
+            button_type="primary" if st.session_state.current_teacher_tab==tab_key else "tertiary"
+            if st.button(
+                label,
+                type=button_type,
+                width="stretch",
+                icon=icon,
+                key=f"teacher_tab_{tab_key}",
+            ):
+                st.session_state.current_teacher_tab=tab_key
+                st.rerun()
+
 def teacher_tab_take_attendance():
     teacher_id=st.session_state.teacher_data['teacher_id']
     st.header("Take AI Attendance")
@@ -99,7 +111,7 @@ def teacher_tab_take_attendance():
 
     subject_options={f"{s['name']} - {s['subject_code']}":s['subject_id'] for s in subjects}
 
-    col1,col2=st.columns([3,1])
+    col1,col2=st.columns([3,1], vertical_alignment="bottom", gap="medium")
 
     with col1:
         selected_subject_label=st.selectbox(
@@ -109,7 +121,7 @@ def teacher_tab_take_attendance():
         )
 
     with col2 :
-        if st.button('Add Photos',type='primary',icon=':material/photo_prints:'):
+        if st.button('Add Photos',type='primary',width='stretch',icon=':material/photo_prints:'):
             add_photo_dialog()
 
     selected_subject_id=subject_options[selected_subject_label]
@@ -124,27 +136,89 @@ def teacher_tab_take_attendance():
 def render_attendance_photos(selected_subject_id):
     images=st.session_state.get('attendance_images',[])
 
-    header_col, action_col=st.columns([3,1],vertical_alignment="center")
-    with header_col:
-        st.subheader(f"Classroom Photos ({len(images)})")
-    with action_col:
-        if images and st.button("Clear All",type="secondary",width="stretch"):
-            st.session_state.attendance_images=[]
-            st.session_state.processed_attendance_uploads=set()
-            st.session_state.pop('last_camera_photo',None)
-            st.rerun()
-
     if not images:
         st.info("No photos added yet. Use Add Photos to capture or upload classroom images.")
         return
 
-    columns=st.columns(3)
-    for index,image in enumerate(images):
-        with columns[index % 3]:
-            st.image(image,caption=f"Photo {index + 1}",use_container_width=True)
-            if st.button("Remove",key=f"remove_attendance_photo_{index}",width="stretch"):
-                st.session_state.attendance_images.pop(index)
+    st.divider()
+
+    if st.session_state.attendance_images:
+        st.header("Added Photos")
+        gallery_cols=st.columns(4)
+
+        for idx,img in enumerate(st.session_state.attendance_images):
+            with gallery_cols[idx % 4 ]:
+                st.image(img,width='stretch',caption=f'Photo {idx+1}')
+
+        c1,c2,c3=st.columns(3, gap="medium")
+
+        with c1:
+            if st.button('Clear all photos',width='stretch',type='tertiary',icon=':material/delete:'):
+                st.session_state.attendance_images=[]
                 st.rerun()
+
+        with c2:
+            if st.button('Run Face Analysis',width='stretch',type='secondary',icon=':material/analytics:'):
+                with st.spinner("Deep scanning classroom photos...."):
+                    all_detected_ids={}
+                    results,attendance_to_log=[],[]
+
+                    for idx, img in enumerate(st.session_state.attendance_images):
+                        img_np=np.array(img.convert('RGB'))
+
+                        detected,_,_=predict_attendance(img_np)
+
+
+                        if detected:
+                            for sid in detected.keys():
+                                student_id=int(sid)
+
+                                all_detected_ids.setdefault(student_id,[]).append(f"Photo {idx+1}")
+
+
+                    enrolled_res=supabase.table('subject_students').select("*,students(*)").eq('subject_id',selected_subject_id).execute()
+                    enrolled_students=enrolled_res.data
+
+                    if not enrolled_students:
+                        st.warning("No students enrolled in this course")
+                    else:
+                        current_timestamp=datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+
+
+                        for node in enrolled_students:
+                            student=node['students']
+                            if not student:
+                                continue
+                            sources=all_detected_ids.get(int(student['student_id']),[])
+                            is_present=len(sources)>0
+
+                            results.append({
+                                "Name":student['name'],
+                                "ID":student['student_id'],
+                                "Source":",".join(sources) if is_present else "-",
+                                "Status":"✅ Present" if is_present else "❌ Absent"
+                            })
+
+                            attendance_to_log.append({
+                                "student_id":student["student_id"],
+                                "subject_id":selected_subject_id,
+                                "timestamp":current_timestamp,
+                                "is_present":bool(is_present)
+                            })
+
+                    if results:
+                        attendance_result_dialog(pd.DataFrame(results),attendance_to_log)
+
+        with c3:
+            if st.button("Use Voice Attendance",type='primary',width='stretch',icon=':material/mic:'):
+                st.info("Voice attendance is not available yet.")
+
+
+
+
+
+
+
 
 
 def teacher_tab_manage_subjects():
