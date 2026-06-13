@@ -8,7 +8,7 @@ scikit-learn
 dlib-bin
 
 git+https://github.com/ageitgey/face_recognition_models
-setuptools
+setuptools<81
 
 # Database
 supabase
@@ -26,4 +26,3 @@ streamlit
 # voice
 librosa
 resemblyzer
-setuptools
