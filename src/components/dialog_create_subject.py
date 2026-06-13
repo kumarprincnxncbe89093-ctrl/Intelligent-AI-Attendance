@@ -20,3 +20,4 @@ def create_subject_dialog(teacher_id):
                 st.error(f"Error : {str(e)}")
         else:
             st.warning("Please fill all the fields")
+

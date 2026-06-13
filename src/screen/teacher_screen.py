@@ -6,7 +6,8 @@ from src.components.footer import footer_dashboard
 from src.database.db import check_teacher_exist,create_teacher,teacher_login,get_teacher_subjects
 from src.components.subject_card import subject_card
 from src.components.dialog_create_subject import create_subject_dialog
-
+from src.components.dialog_share_subject import share_subject_dialog
+from src.components.dialog_add_photo import add_photo_dialog
 def teacher_screen():
 
     style_background_dashboard()
@@ -81,7 +82,69 @@ def teacher_dashboard():
 
     footer_dashboard()
 def teacher_tab_take_attendance():
+    teacher_id=st.session_state.teacher_data['teacher_id']
     st.header("Take AI Attendance")
+
+
+    if 'attendance_images' not in st.session_state:
+        st.session_state.attendance_images=[]
+    if 'processed_attendance_uploads' not in st.session_state:
+        st.session_state.processed_attendance_uploads=set()
+
+    subjects=get_teacher_subjects(teacher_id)
+
+    if not subjects:
+        st.warning('You haven,t created any subject yet!! Please create one to begin!')
+        return
+
+    subject_options={f"{s['name']} - {s['subject_code']}":s['subject_id'] for s in subjects}
+
+    col1,col2=st.columns([3,1])
+
+    with col1:
+        selected_subject_label=st.selectbox(
+            'Select Subject',
+            options=list(subject_options.keys()),
+            key='take_attendance_subject',
+        )
+
+    with col2 :
+        if st.button('Add Photos',type='primary',icon=':material/photo_prints:'):
+            add_photo_dialog()
+
+    selected_subject_id=subject_options[selected_subject_label]
+
+    st.divider()
+    render_attendance_photos(selected_subject_id)
+
+
+
+
+
+def render_attendance_photos(selected_subject_id):
+    images=st.session_state.get('attendance_images',[])
+
+    header_col, action_col=st.columns([3,1],vertical_alignment="center")
+    with header_col:
+        st.subheader(f"Classroom Photos ({len(images)})")
+    with action_col:
+        if images and st.button("Clear All",type="secondary",width="stretch"):
+            st.session_state.attendance_images=[]
+            st.session_state.processed_attendance_uploads=set()
+            st.session_state.pop('last_camera_photo',None)
+            st.rerun()
+
+    if not images:
+        st.info("No photos added yet. Use Add Photos to capture or upload classroom images.")
+        return
+
+    columns=st.columns(3)
+    for index,image in enumerate(images):
+        with columns[index % 3]:
+            st.image(image,caption=f"Photo {index + 1}",use_container_width=True)
+            if st.button("Remove",key=f"remove_attendance_photo_{index}",width="stretch"):
+                st.session_state.attendance_images.pop(index)
+                st.rerun()
 
 
 def teacher_tab_manage_subjects():
@@ -101,22 +164,22 @@ def teacher_tab_manage_subjects():
     if subjects:
         for sub in subjects:
             stats=[
-                ("🫂","Students",sub.get("total_students",0)),
+                ("🫂","Students",sub.get("total_student",0)),
                 ("⏰","Classes",sub.get("total_classes",0))
             ]
-        
-        def share_btn():
-            if st.button(f"Share Code :{sub['name']}",key=f"share_{sub['subject_code']}",icon=":material/share:"):
-                share_subject_dialog(sub['name'],sub['subject_code'])
-            st.space()
 
-        subject_card(
-            name=sub['name'],
-            code=sub['subject_code'],
-            section=sub['section'],
-            stats=stats,
-            footer_callback=share_btn
-        )
+            def share_btn(subject_name=sub['name'], subject_code=sub['subject_code']):
+                if st.button(f"Share Code : {subject_name}",key=f"share_{subject_code}",icon=":material/share:"):
+                    share_subject_dialog(subject_name,subject_code)
+                st.space()
+
+            subject_card(
+                name=sub['name'],
+                code=sub['subject_code'],
+                section=sub['section'],
+                stats=stats,
+                footer_callback=share_btn
+            )
     else:
         st.info("NO SUBJECT FOUND, CREATE ONE ABOVE")
 
