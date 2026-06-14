@@ -121,169 +121,121 @@ def style_base_layout():
 
                 h1 {
                     font-family: 'Climate Crisis', sans-serif !important;
-                    font-size: 2.4rem !important;
+                    font-size: 3rem !important;
                     line-height: 1.1 !important;
-                    margin-bottom: 0 !important;
-                    color: #1e293b;
+                    margin-bottom: 0.rem !important;
                     
                 }
                 h2 {
                     font-family: 'Climate Crisis', sans-serif !important;
                     font-size: 2rem !important;
                     line-height: 1.1 !important;
-                    margin-bottom: 0 !important;
-                    color: #1e293b;
+                    margin-bottom: 0.rem !important;
                 }
 
-                h3,h4,p,label,span{
+                h3,h4,p{
                     font-family: 'Outfit', sans-serif ;
-                    color: #1e293b;
 
                 }
-                button,
-                button[data-testid="stBaseButton-primary"] {
+                button {
                     border-radius: 1.5rem !important;
                     background-color: #5865F2 !important;
                     color: white !important;
                     padding: 10px 20px !important;
                     border: none !important;
-                    min-height: 2.9rem !important;
-                    display: inline-flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    gap: 0.45rem !important;
-                    font-family: 'Outfit', sans-serif !important;
-                    font-size: 1rem !important;
-                    font-weight: 700 !important;
-                    line-height: 1.1 !important;
-                    box-shadow: 0 10px 22px rgba(88, 101, 242, 0.18) !important;
-                    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease !important;
+                    transition: transform 0.25s ease-in-out !important;
                     }
-                button *,
-                button[data-testid="stBaseButton-primary"] * {
-                    color: white !important;
-                    }
-                button[kind="secondary"],
-                button[data-testid="stBaseButton-secondary"] {
+                button[kind="secondary"] {
                     border-radius: 1.5rem !important;
                     background-color: #EB458E !important;
                     color: white !important;
                     padding: 10px 20px !important;
                     border: none !important;
-                    box-shadow: 0 10px 22px rgba(235, 69, 142, 0.18) !important;
+                    transition: transform 0.25s ease-in-out !important;
                     }
-                button[kind="tertiary"],
-                button[data-testid="stBaseButton-tertiary"] {
+                button[kind="tertiary"] {
                     border-radius: 1.5rem !important;
-                    background-color: #000000 !important;
+                    background-color: black !important;
                     color: white !important;
                     padding: 10px 20px !important;
                     border: none !important;
-                    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.14) !important;
-                    }
-                button[kind="tertiary"] *,
-                button[data-testid="stBaseButton-tertiary"] * {
-                    color: white !important;
+                    transition: transform 0.25s ease-in-out !important;
                     }
                 button:hover {
-                    transform: translateY(-1px) !important;
-                    box-shadow: 0 12px 26px rgba(88, 101, 242, 0.22) !important;
-                    }
-                button[kind="tertiary"]:hover,
-                button[data-testid="stBaseButton-tertiary"]:hover {
-                    background-color: #111111 !important;
-                    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.18) !important;
-                    }
-
+                    transform: scale(1.05) !important;
+                }
                 @media (max-width: 760px) {
+
                     .block-container {
                         padding-left: 1rem !important;
                         padding-right: 1rem !important;
                     }
 
-                    .stApp,
-                    .stApp p,
-                    .stApp label,
-                    .stApp span,
-                    .stApp div {
-                        color: #1e293b;
-                    }
-
-                    h1, h2, h3, h4 {
-                        font-family: 'Outfit', sans-serif !important;
-                        color: #1e293b !important;
-                        letter-spacing: 0 !important;
-                        overflow-wrap: anywhere;
-                    }
-
                     h1 {
                         font-size: 2rem !important;
-                        line-height: 1.08 !important;
-                    }
-
-                    .home-hero h1 {
-                        color: #ffffff !important;
-                        font-family: 'Outfit', sans-serif !important;
-                        font-weight: 900 !important;
+                        line-height: 1.15 !important;
                     }
 
                     h2 {
-                        font-size: 1.75rem !important;
-                        line-height: 1.12 !important;
-                    }
-
-                    h3 {
-                        font-size: 1.35rem !important;
+                        font-size: 1.6rem !important;
                         line-height: 1.2 !important;
                     }
 
-                    label,
+                    h3 {
+                        font-size: 1.25rem !important;
+                        line-height: 1.3 !important;
+                    }
+
                     p,
+                    label,
                     span {
-                        font-size: 0.98rem !important;
-                        line-height: 1.35 !important;
+                        font-size: 1rem !important;
+                        line-height: 1.6 !important;
                     }
 
-                    div[data-testid="stCameraInput"],
-                    div[data-testid="stFileUploader"],
-                    div[data-testid="stAudioInput"] {
-                        color: #1e293b !important;
-                    }
-
-                    div[data-testid="stCameraInput"] img,
-                    div[data-testid="stCameraInput"] video {
-                        max-width: 100% !important;
-                        height: auto !important;
-                        border-radius: 0.75rem !important;
+                    .stApp div[data-testid="stColumn"] {
+                        padding: 1.5rem !important;
+                        border-radius: 1.7rem !important;
                     }
 
                     button,
                     button[data-testid^="stBaseButton"] {
-                        background-color: #5865F2 !important;
-                        color: #ffffff !important;
-                        min-height: 2.8rem !important;
-                        padding: 9px 12px !important;
-                        font-size: 0.9rem !important;
-                        white-space: normal !important;
-                        overflow-wrap: anywhere !important;
+                        width: 100% !important;
+                        min-height: 3rem !important;
+                        padding: 0.85rem 1rem !important;
+                        font-size: 0.95rem !important;
                         text-align: center !important;
                     }
 
                     button *,
                     button[data-testid^="stBaseButton"] * {
-                        color: #ffffff !important;
                         white-space: normal !important;
-                        overflow-wrap: anywhere !important;
                     }
 
-                    button[kind="secondary"],
-                    button[data-testid="stBaseButton-secondary"] {
-                        background-color: #EB458E !important;
+                    div[data-testid="stCameraInput"] img,
+                    div[data-testid="stCameraInput"] video {
+                        width: 100% !important;
+                        height: auto !important;
+                        object-fit: contain !important;
+                        border-radius: 1rem !important;
                     }
 
-                    button[kind="tertiary"],
-                    button[data-testid="stBaseButton-tertiary"] {
-                        background-color: #000000 !important;
+                    div[data-testid="stDataFrame"] {
+                        overflow-x: auto !important;
+                    }
+
+                    table {
+                        min-width: 600px !important;
+                    }
+
+                    h1,
+                    h2,
+                    h3,
+                    p,
+                    span,
+                    label {
+                        overflow-wrap: break-word !important;
+                        word-break: break-word !important;
                     }
                 }
         </style>
